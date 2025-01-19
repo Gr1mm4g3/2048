@@ -105,3 +105,76 @@ h1 {
 #new-game-btn:hover {
     background-color: #9f8a76;
 }
+
+.leaderboard {
+    margin-top: 30px;
+    background-color: #bbada0;
+    padding: 15px;
+    border-radius: 5px;
+    color: white;
+}
+
+.leaderboard h2 {
+    margin: 0 0 15px 0;
+    font-size: 24px;
+}
+
+#leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.leaderboard-item {
+    background-color: rgba(238, 228, 218, 0.35);
+    padding: 10px;
+    border-radius: 3px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: #faf8ef;
+    padding: 20px;
+    border-radius: 5px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+#username-input {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 15px 0;
+    border: 2px solid #bbada0;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+#start-game-btn {
+    background-color: #8f7a66;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 18px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#start-game-btn:hover {
+    background-color: #7f6a56;
+}

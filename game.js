@@ -5,13 +5,88 @@ class Game2048 {
         this.gameBoard = document.getElementById('game-board');
         this.scoreDisplay = document.getElementById('score');
         this.newGameBtn = document.getElementById('new-game-btn');
+        this.usernameModal = document.getElementById('username-modal');
+        this.usernameInput = document.getElementById('username-input');
+        this.startGameBtn = document.getElementById('start-game-btn');
+        this.leaderboardList = document.getElementById('leaderboard-list');
+        this.username = '';
         
-        this.newGameBtn.addEventListener('click', () => this.initGame());
+        this.newGameBtn.addEventListener('click', () => this.showUsernameModal());
+        this.startGameBtn.addEventListener('click', () => this.handleStartGame());
         
         // Add keyboard event listeners
         document.addEventListener('keydown', (e) => this.handleKeyPress(e));
         
-        this.initGame();
+        // Show username modal on initial load
+        this.showUsernameModal();
+        
+        // Load leaderboard
+        this.loadLeaderboard();
+    }
+    
+    showUsernameModal() {
+        this.usernameModal.style.display = 'block';
+        this.usernameInput.value = this.username;
+        this.usernameInput.focus();
+    }
+    
+    handleStartGame() {
+        const username = this.usernameInput.value.trim();
+        if (username) {
+            this.username = username;
+            this.usernameModal.style.display = 'none';
+            this.initGame();
+        } else {
+            alert('Please enter a username');
+        }
+    }
+    
+    async loadLeaderboard() {
+        try {
+            const { data, error } = await supabase
+                .from('leaderboard')
+                .select('*')
+                .order('score', { ascending: false })
+                .limit(10);
+
+            if (error) throw error;
+            this.updateLeaderboardUI(data);
+        } catch (error) {
+            console.error('Error loading leaderboard:', error);
+        }
+    }
+    
+    updateLeaderboardUI(leaderboard) {
+        this.leaderboardList.innerHTML = '';
+        leaderboard.forEach((entry, index) => {
+            const item = document.createElement('div');
+            item.className = 'leaderboard-item';
+            item.innerHTML = `
+                <span>${index + 1}. ${entry.username}</span>
+                <span>${entry.score}</span>
+            `;
+            this.leaderboardList.appendChild(item);
+        });
+    }
+    
+    async saveScore() {
+        if (this.username && this.score > 0) {
+            try {
+                const { error } = await supabase
+                    .from('leaderboard')
+                    .insert([
+                        {
+                            username: this.username,
+                            score: this.score
+                        }
+                    ]);
+
+                if (error) throw error;
+                this.loadLeaderboard(); // Refresh the leaderboard
+            } catch (error) {
+                console.error('Error saving score:', error);
+            }
+        }
     }
     
     initGame() {
@@ -256,41 +331,41 @@ class Game2048 {
     }
     
     checkGameStatus() {
-        // Check for 2048 win condition
-        for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
-                if (this.board[r][c] === 2048) {
-                    alert('Congratulations! You won!');
-                    return;
-                }
-            }
-        }
+        // Check if game is over
+        let isGameOver = true;
         
-        // Check if game is over (no more moves possible)
-        if (this.isGameOver()) {
-            alert('Game Over! No more moves possible.');
-        }
-    }
-    
-    isGameOver() {
-        // Check if any cell is empty
+        // Check for empty cells
         for (let r = 0; r < 4; r++) {
             for (let c = 0; c < 4; c++) {
                 if (this.board[r][c] === 0) {
-                    return false;
-                }
-                
-                // Check adjacent cells for possible merges
-                if (r < 3 && this.board[r][c] === this.board[r+1][c]) {
-                    return false;
-                }
-                if (c < 3 && this.board[r][c] === this.board[r][c+1]) {
-                    return false;
+                    isGameOver = false;
+                    break;
                 }
             }
         }
         
-        return true;
+        // Check for possible merges
+        if (isGameOver) {
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    if (
+                        (r < 3 && this.board[r][c] === this.board[r + 1][c]) ||
+                        (c < 3 && this.board[r][c] === this.board[r][c + 1])
+                    ) {
+                        isGameOver = false;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (isGameOver) {
+            this.saveScore();
+            setTimeout(() => {
+                alert(`Game Over! Your score: ${this.score}`);
+                this.showUsernameModal();
+            }, 500);
+        }
     }
 }
 

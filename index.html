@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>2048 Game</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="container">
@@ -18,7 +19,22 @@
         <div class="game-controls">
             <button id="new-game-btn">New Game</button>
         </div>
+        <div class="leaderboard">
+            <h2>Leaderboard</h2>
+            <div id="leaderboard-list"></div>
+        </div>
     </div>
+
+    <!-- Username Modal -->
+    <div id="username-modal" class="modal">
+        <div class="modal-content">
+            <h2>Enter Your Username</h2>
+            <input type="text" id="username-input" placeholder="Username" maxlength="20">
+            <button id="start-game-btn">Start Game</button>
+        </div>
+    </div>
+
+    <script src="supabase-config.js"></script>
     <script src="game.js"></script>
 </body>
 </html>
