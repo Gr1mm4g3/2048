@@ -196,7 +196,7 @@ class Game2048 {
     async saveScore() {
         if (this.username && this.score > 0) {
             try {
-                // First check if user already has a higher score
+                // Get the current high score for this user
                 const { data, error: fetchError } = await supabase
                     .from('leaderboard')
                     .select('score')
@@ -206,19 +206,25 @@ class Game2048 {
 
                 if (fetchError) throw fetchError;
 
-                // Only save if this is their first score or if it's higher than their previous best
+                // If there's no previous score or the new score is higher
                 if (!data.length || this.score > data[0].score) {
                     const { error } = await supabase
                         .from('leaderboard')
-                        .insert([
+                        .upsert([
                             {
                                 username: this.username,
-                                score: this.score
+                                score: this.score,
+                                updated_at: new Date().toISOString()
                             }
-                        ]);
+                        ], {
+                            onConflict: 'username',
+                            ignoreDuplicates: false
+                        });
 
                     if (error) throw error;
-                    this.loadLeaderboard(); // Refresh the leaderboard
+                    
+                    // Reload the leaderboard to show the updated score
+                    await this.loadLeaderboard();
                 }
             } catch (error) {
                 console.error('Error saving score:', error);
