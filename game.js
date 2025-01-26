@@ -71,10 +71,48 @@ class Game2048 {
         leaderboard.forEach((entry, index) => {
             const item = document.createElement('div');
             item.className = 'leaderboard-item';
-            item.innerHTML = `
-                <span>${index + 1}. ${entry.username}</span>
-                <span>${entry.score}</span>
-            `;
+            
+            // Add special classes for top 3
+            if (index === 0) item.classList.add('gold');
+            if (index === 1) item.classList.add('silver');
+            if (index === 2) item.classList.add('bronze');
+            
+            // Get medal emoji based on position
+            let medal = '';
+            if (index === 0) medal = '🏆';
+            else if (index === 1) medal = '🥈';
+            else if (index === 2) medal = '🥉';
+            
+            const playerInfo = document.createElement('div');
+            playerInfo.className = 'player-info';
+            
+            if (medal) {
+                const medalSpan = document.createElement('span');
+                medalSpan.className = 'medal';
+                medalSpan.textContent = medal;
+                playerInfo.appendChild(medalSpan);
+            }
+            
+            const rankSpan = document.createElement('span');
+            rankSpan.className = 'rank';
+            rankSpan.textContent = `#${index + 1}`;
+            playerInfo.appendChild(rankSpan);
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = entry.username;
+            if (index === 0) {
+                const championBadge = document.createElement('span');
+                championBadge.className = 'champion-badge';
+                championBadge.textContent = 'Champion';
+                nameSpan.appendChild(championBadge);
+            }
+            playerInfo.appendChild(nameSpan);
+            
+            const scoreSpan = document.createElement('span');
+            scoreSpan.textContent = entry.score;
+            
+            item.appendChild(playerInfo);
+            item.appendChild(scoreSpan);
             this.leaderboardList.appendChild(item);
         });
     }
