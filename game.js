@@ -1,6 +1,7 @@
 class Game2048 {
     constructor() {
         this.board = Array(4).fill().map(() => Array(4).fill(0));
+        this.previousBoard = Array(4).fill().map(() => Array(4).fill(0));
         this.score = 0;
         this.gameBoard = document.getElementById('game-board');
         this.scoreDisplay = document.getElementById('score');
@@ -101,6 +102,7 @@ class Game2048 {
     initGame() {
         // Reset board and score
         this.board = Array(4).fill().map(() => Array(4).fill(0));
+        this.previousBoard = Array(4).fill().map(() => Array(4).fill(0));
         this.score = 0;
         this.scoreDisplay.textContent = '0';
         
@@ -136,24 +138,46 @@ class Game2048 {
         // Clear existing board
         this.gameBoard.innerHTML = '';
         
-        // Create tiles
+        // Create grid and tiles
         for (let r = 0; r < 4; r++) {
             for (let c = 0; c < 4; c++) {
-                const tileElement = document.createElement('div');
-                tileElement.classList.add('tile');
+                // Create grid cell
+                const gridCell = document.createElement('div');
+                gridCell.classList.add('grid-cell');
                 
-                // Add value and styling if tile is not empty
+                // Add tile if there's a value
                 if (this.board[r][c] !== 0) {
-                    tileElement.textContent = this.board[r][c];
+                    const tileElement = document.createElement('div');
+                    tileElement.classList.add('tile');
                     tileElement.classList.add(`tile-${this.board[r][c]}`);
+                    tileElement.textContent = this.board[r][c];
+                    
+                    // Add animation classes if needed
+                    if (this.board[r][c] !== this.previousBoard?.[r]?.[c]) {
+                        if (!this.previousBoard?.[r]?.[c]) {
+                            tileElement.classList.add('new');
+                        } else if (this.board[r][c] > this.previousBoard[r][c]) {
+                            tileElement.classList.add('merge');
+                        }
+                    }
+                    
+                    gridCell.appendChild(tileElement);
                 }
                 
-                this.gameBoard.appendChild(tileElement);
+                this.gameBoard.appendChild(gridCell);
             }
         }
+        
+        // Store current board state for next render
+        this.previousBoard = this.board.map(row => [...row]);
     }
     
     handleKeyPress(e) {
+        // Prevent default behavior for arrow keys
+        if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+            e.preventDefault();
+        }
+        
         let moved = false;
         
         switch(e.key) {
@@ -241,6 +265,7 @@ class Game2048 {
     
     moveLeft() {
         let moved = false;
+        const newBoard = this.board.map(row => [...row]);
         
         for (let r = 0; r < 4; r++) {
             const row = this.board[r].filter(val => val !== 0);
@@ -278,6 +303,7 @@ class Game2048 {
     
     moveRight() {
         let moved = false;
+        const newBoard = this.board.map(row => [...row]);
         
         for (let r = 0; r < 4; r++) {
             const row = this.board[r].filter(val => val !== 0);
@@ -315,6 +341,7 @@ class Game2048 {
     
     moveUp() {
         let moved = false;
+        const newBoard = this.board.map(row => [...row]);
         
         for (let c = 0; c < 4; c++) {
             const column = [];
@@ -357,6 +384,7 @@ class Game2048 {
     
     moveDown() {
         let moved = false;
+        const newBoard = this.board.map(row => [...row]);
         
         for (let c = 0; c < 4; c++) {
             const column = [];
