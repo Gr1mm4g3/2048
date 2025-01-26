@@ -157,9 +157,9 @@ h1 {
 
 #username-input {
     display: block;
-    width: 100%;
+    width: 80%;
     padding: 10px;
-    margin: 15px 0;
+    margin: 15px auto;
     border: 2px solid #bbada0;
     border-radius: 5px;
     font-size: 16px;

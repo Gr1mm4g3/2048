@@ -11,11 +11,20 @@ class Game2048 {
         this.leaderboardList = document.getElementById('leaderboard-list');
         this.username = '';
         
+        // Touch handling variables
+        this.touchStartX = null;
+        this.touchStartY = null;
+        
         this.newGameBtn.addEventListener('click', () => this.showUsernameModal());
         this.startGameBtn.addEventListener('click', () => this.handleStartGame());
         
         // Add keyboard event listeners
         document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+        
+        // Add touch event listeners
+        this.gameBoard.addEventListener('touchstart', (e) => this.handleTouchStart(e));
+        this.gameBoard.addEventListener('touchmove', (e) => this.handleTouchMove(e));
+        this.gameBoard.addEventListener('touchend', () => this.handleTouchEnd());
         
         // Show username modal on initial load
         this.showUsernameModal();
@@ -163,6 +172,64 @@ class Game2048 {
             default:
                 return;
         }
+        
+        // If the board changed, add a new tile and re-render
+        if (moved) {
+            this.addRandomTile();
+            this.renderBoard();
+            this.checkGameStatus();
+        }
+    }
+    
+    handleTouchStart(e) {
+        const touch = e.touches[0];
+        this.touchStartX = touch.clientX;
+        this.touchStartY = touch.clientY;
+        // Prevent scrolling while touching the game board
+        e.preventDefault();
+    }
+    
+    handleTouchMove(e) {
+        if (!this.touchStartX || !this.touchStartY) return;
+        e.preventDefault();
+    }
+    
+    handleTouchEnd() {
+        if (!this.touchStartX || !this.touchStartY) return;
+        
+        const touch = event.changedTouches[0];
+        const deltaX = touch.clientX - this.touchStartX;
+        const deltaY = touch.clientY - this.touchStartY;
+        
+        // Minimum swipe distance to trigger a move (in pixels)
+        const minSwipeDistance = 50;
+        
+        let moved = false;
+        
+        // Determine swipe direction based on which delta is larger
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            // Horizontal swipe
+            if (Math.abs(deltaX) > minSwipeDistance) {
+                if (deltaX > 0) {
+                    moved = this.moveRight();
+                } else {
+                    moved = this.moveLeft();
+                }
+            }
+        } else {
+            // Vertical swipe
+            if (Math.abs(deltaY) > minSwipeDistance) {
+                if (deltaY > 0) {
+                    moved = this.moveDown();
+                } else {
+                    moved = this.moveUp();
+                }
+            }
+        }
+        
+        // Reset touch coordinates
+        this.touchStartX = null;
+        this.touchStartY = null;
         
         // If the board changed, add a new tile and re-render
         if (moved) {
