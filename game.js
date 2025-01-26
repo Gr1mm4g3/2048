@@ -15,10 +15,40 @@ class Game2048 {
         this.themeToggle = document.getElementById('theme-toggle');
         this.username = '';
         
-        // Sound elements
-        this.moveSound = document.getElementById('move-sound');
-        this.mergeSound = document.getElementById('merge-sound');
-        this.gameOverSound = document.getElementById('game-over-sound');
+        // Initialize sounds with proper error handling
+        this.sounds = {
+            move: new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA'),
+            merge: new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAIA'),
+            gameOver: new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAMA')
+        };
+
+        // Create AudioContext for better sound handling
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Create oscillator function for generating sounds
+        this.playTone = (frequency, duration, type = 'sine') => {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+            
+            gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            oscillator.start();
+            oscillator.stop(this.audioContext.currentTime + duration);
+        };
+        
+        // Set volume for all sounds
+        Object.values(this.sounds).forEach(sound => {
+            sound.volume = 0.3;
+            // Preload sounds
+            sound.load();
+        });
         
         // Initialize theme
         this.initializeTheme();
@@ -71,13 +101,32 @@ class Game2048 {
         }
     }
 
-    playSound(sound) {
-        // Reset the sound to start and play
-        sound.currentTime = 0;
-        sound.volume = 0.3; // Set volume to 30%
-        sound.play().catch(e => console.log('Sound play failed:', e));
-    }
+    playSound(soundName) {
+        try {
+            // Resume AudioContext if it was suspended
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
 
+            switch (soundName) {
+                case 'move':
+                    this.playTone(220, 0.1, 'sine'); // A3 note, short duration
+                    break;
+                case 'merge':
+                    this.playTone(440, 0.15, 'square'); // A4 note, slightly longer
+                    break;
+                case 'gameOver':
+                    // Play a sequence of tones for game over
+                    this.playTone(440, 0.1, 'sine');
+                    setTimeout(() => this.playTone(330, 0.1, 'sine'), 100);
+                    setTimeout(() => this.playTone(220, 0.2, 'sine'), 200);
+                    break;
+            }
+        } catch (error) {
+            console.log(`Error playing sound: ${soundName}`, error);
+        }
+    }
+    
     showGameOver(won = false) {
         const title = document.getElementById('game-over-title');
         const scoreSpan = document.querySelector('#game-over-score span');
@@ -86,7 +135,7 @@ class Game2048 {
         scoreSpan.textContent = this.score;
         
         this.gameOverModal.style.display = 'block';
-        this.playSound(this.gameOverSound);
+        this.playSound('gameOver');
         
         if (won) {
             // Trigger confetti animation
@@ -394,11 +443,11 @@ class Game2048 {
     
     moveLeft() {
         let moved = false;
+        let mergeHappened = false;
         const newBoard = this.board.map(row => [...row]);
         
         for (let r = 0; r < 4; r++) {
             const row = this.board[r].filter(val => val !== 0);
-            let mergeHappened = false;
             
             // Merge tiles
             for (let c = 0; c < row.length - 1; c++) {
@@ -423,19 +472,16 @@ class Game2048 {
                 }
                 this.board[r][c] = row[c];
             }
-            
-            // Play appropriate sound
-            if (moved) {
-                if (mergeHappened) {
-                    this.playSound(this.mergeSound);
-                } else {
-                    this.playSound(this.moveSound);
-                }
-            }
         }
         
         if (moved) {
             this.scoreDisplay.textContent = this.score;
+            // Play sound after the move is confirmed
+            if (mergeHappened) {
+                this.playSound('merge');
+            } else {
+                this.playSound('move');
+            }
         }
         
         return moved;
@@ -443,11 +489,11 @@ class Game2048 {
     
     moveRight() {
         let moved = false;
+        let mergeHappened = false;
         const newBoard = this.board.map(row => [...row]);
         
         for (let r = 0; r < 4; r++) {
             const row = this.board[r].filter(val => val !== 0);
-            let mergeHappened = false;
             
             // Merge tiles
             for (let c = row.length - 1; c > 0; c--) {
@@ -472,19 +518,16 @@ class Game2048 {
                 }
                 this.board[r][c] = row[c];
             }
-            
-            // Play appropriate sound
-            if (moved) {
-                if (mergeHappened) {
-                    this.playSound(this.mergeSound);
-                } else {
-                    this.playSound(this.moveSound);
-                }
-            }
         }
         
         if (moved) {
             this.scoreDisplay.textContent = this.score;
+            // Play sound after the move is confirmed
+            if (mergeHappened) {
+                this.playSound('merge');
+            } else {
+                this.playSound('move');
+            }
         }
         
         return moved;
@@ -492,6 +535,7 @@ class Game2048 {
     
     moveUp() {
         let moved = false;
+        let mergeHappened = false;
         const newBoard = this.board.map(row => [...row]);
         
         for (let c = 0; c < 4; c++) {
@@ -501,7 +545,6 @@ class Game2048 {
                     column.push(this.board[r][c]);
                 }
             }
-            let mergeHappened = false;
             
             // Merge tiles
             for (let i = 0; i < column.length - 1; i++) {
@@ -526,19 +569,16 @@ class Game2048 {
                 }
                 this.board[r][c] = column[r];
             }
-            
-            // Play appropriate sound
-            if (moved) {
-                if (mergeHappened) {
-                    this.playSound(this.mergeSound);
-                } else {
-                    this.playSound(this.moveSound);
-                }
-            }
         }
         
         if (moved) {
             this.scoreDisplay.textContent = this.score;
+            // Play sound after the move is confirmed
+            if (mergeHappened) {
+                this.playSound('merge');
+            } else {
+                this.playSound('move');
+            }
         }
         
         return moved;
@@ -546,6 +586,7 @@ class Game2048 {
     
     moveDown() {
         let moved = false;
+        let mergeHappened = false;
         const newBoard = this.board.map(row => [...row]);
         
         for (let c = 0; c < 4; c++) {
@@ -555,7 +596,6 @@ class Game2048 {
                     column.push(this.board[r][c]);
                 }
             }
-            let mergeHappened = false;
             
             // Merge tiles
             for (let i = column.length - 1; i > 0; i--) {
@@ -580,19 +620,16 @@ class Game2048 {
                 }
                 this.board[r][c] = column[r];
             }
-            
-            // Play appropriate sound
-            if (moved) {
-                if (mergeHappened) {
-                    this.playSound(this.mergeSound);
-                } else {
-                    this.playSound(this.moveSound);
-                }
-            }
         }
         
         if (moved) {
             this.scoreDisplay.textContent = this.score;
+            // Play sound after the move is confirmed
+            if (mergeHappened) {
+                this.playSound('merge');
+            } else {
+                this.playSound('move');
+            }
         }
         
         return moved;
