@@ -64,7 +64,7 @@ class Game2048 {
         // Add touch event listeners
         this.gameBoard.addEventListener('touchstart', (e) => this.handleTouchStart(e));
         this.gameBoard.addEventListener('touchmove', (e) => this.handleTouchMove(e));
-        this.gameBoard.addEventListener('touchend', () => this.handleTouchEnd());
+        this.gameBoard.addEventListener('touchend', (e) => this.handleTouchEnd(e));
         
         // Show username modal on initial load
         this.showUsernameModal();
@@ -127,7 +127,10 @@ class Game2048 {
         }
     }
     
-    showGameOver(won = false) {
+    async showGameOver(won = false) {
+        // Save the score first
+        await this.saveScore();
+        
         const title = document.getElementById('game-over-title');
         const scoreSpan = document.querySelector('#game-over-score span');
         
@@ -167,12 +170,19 @@ class Game2048 {
     
     async loadLeaderboard() {
         try {
-            // First get all scores
+            console.log('Loading leaderboard...');
+            // Get all scores
             const { data, error } = await supabase
                 .from('leaderboard')
-                .select('*');
+                .select('*')
+                .order('created_at', { ascending: false });
 
-            if (error) throw error;
+            if (error) {
+                console.error('Error fetching leaderboard:', error);
+                throw error;
+            }
+
+            console.log('Raw leaderboard data:', data);
 
             // Process data to get highest score per user
             const highestScores = data.reduce((acc, current) => {
@@ -187,6 +197,8 @@ class Game2048 {
                 .sort((a, b) => b.score - a.score)
                 .slice(0, 10); // Keep only top 10
 
+            console.log('Processed leaderboard data:', processedData);
+            
             this.updateLeaderboardUI(processedData);
         } catch (error) {
             console.error('Error loading leaderboard:', error);
@@ -194,41 +206,36 @@ class Game2048 {
     }
     
     async saveScore() {
+        console.log('Attempting to save score:', { username: this.username, score: this.score });
+        
         if (this.username && this.score > 0) {
             try {
-                // Get the current high score for this user
-                const { data, error: fetchError } = await supabase
+                // Always insert a new record
+                const { data: saveData, error: saveError } = await supabase
                     .from('leaderboard')
-                    .select('score')
-                    .eq('username', this.username)
-                    .order('score', { ascending: false })
-                    .limit(1);
+                    .insert({
+                        username: this.username,
+                        score: this.score,
+                        created_at: new Date().toISOString()
+                    });
 
-                if (fetchError) throw fetchError;
-
-                // If there's no previous score or the new score is higher
-                if (!data.length || this.score > data[0].score) {
-                    const { error } = await supabase
-                        .from('leaderboard')
-                        .upsert([
-                            {
-                                username: this.username,
-                                score: this.score,
-                                updated_at: new Date().toISOString()
-                            }
-                        ], {
-                            onConflict: 'username',
-                            ignoreDuplicates: false
-                        });
-
-                    if (error) throw error;
-                    
-                    // Reload the leaderboard to show the updated score
-                    await this.loadLeaderboard();
+                if (saveError) {
+                    console.error('Error saving score:', saveError);
+                    throw saveError;
                 }
+
+                console.log('Score saved successfully:', saveData);
+
+                // Reload the leaderboard to show the updated score
+                await this.loadLeaderboard();
             } catch (error) {
-                console.error('Error saving score:', error);
+                console.error('Error in saveScore:', error);
             }
+        } else {
+            console.log('Score not saved - invalid username or score:', {
+                username: this.username,
+                score: this.score
+            });
         }
     }
     
@@ -356,7 +363,7 @@ class Game2048 {
         this.previousBoard = this.board.map(row => [...row]);
     }
     
-    handleKeyPress(e) {
+    async handleKeyPress(e) {
         // Prevent default behavior for arrow keys
         if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
             e.preventDefault();
@@ -385,7 +392,7 @@ class Game2048 {
         if (moved) {
             this.addRandomTile();
             this.renderBoard();
-            this.checkGameStatus();
+            await this.checkGameStatus();
         }
     }
     
@@ -402,12 +409,15 @@ class Game2048 {
         e.preventDefault();
     }
     
-    handleTouchEnd() {
+    handleTouchEnd(e) {
         if (!this.touchStartX || !this.touchStartY) return;
         
-        const touch = event.changedTouches[0];
-        const deltaX = touch.clientX - this.touchStartX;
-        const deltaY = touch.clientY - this.touchStartY;
+        const touch = e.changedTouches[0];
+        this.touchEndX = touch.clientX;
+        this.touchEndY = touch.clientY;
+        
+        const deltaX = this.touchEndX - this.touchStartX;
+        const deltaY = this.touchEndY - this.touchStartY;
         
         // Minimum swipe distance to trigger a move (in pixels)
         const minSwipeDistance = 50;
@@ -438,6 +448,8 @@ class Game2048 {
         // Reset touch coordinates
         this.touchStartX = null;
         this.touchStartY = null;
+        this.touchEndX = null;
+        this.touchEndY = null;
         
         // If the board changed, add a new tile and re-render
         if (moved) {
@@ -445,6 +457,47 @@ class Game2048 {
             this.renderBoard();
             this.checkGameStatus();
         }
+    }
+    
+    async checkGameStatus() {
+        // Check for 2048 tile
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 4; c++) {
+                if (this.board[r][c] === 2048) {
+                    await this.showGameOver(true);
+                    return;
+                }
+            }
+        }
+        
+        // Check for available moves
+        if (this.isGameOver()) {
+            await this.showGameOver(false);
+        }
+    }
+
+    isGameOver() {
+        // Check for empty cells
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 4; c++) {
+                if (this.board[r][c] === 0) return false;
+            }
+        }
+        
+        // Check for possible merges
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 4; c++) {
+                const current = this.board[r][c];
+                
+                // Check right
+                if (c < 3 && current === this.board[r][c + 1]) return false;
+                
+                // Check down
+                if (r < 3 && current === this.board[r + 1][c]) return false;
+            }
+        }
+        
+        return true;
     }
     
     moveLeft() {
@@ -639,47 +692,6 @@ class Game2048 {
         }
         
         return moved;
-    }
-    
-    checkGameStatus() {
-        // Check for 2048 tile
-        for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
-                if (this.board[r][c] === 2048) {
-                    this.showGameOver(true);
-                    return;
-                }
-            }
-        }
-        
-        // Check for available moves
-        if (this.isGameOver()) {
-            this.showGameOver(false);
-        }
-    }
-
-    isGameOver() {
-        // Check for empty cells
-        for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
-                if (this.board[r][c] === 0) return false;
-            }
-        }
-        
-        // Check for possible merges
-        for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
-                const current = this.board[r][c];
-                
-                // Check right
-                if (c < 3 && current === this.board[r][c + 1]) return false;
-                
-                // Check down
-                if (r < 3 && current === this.board[r + 1][c]) return false;
-            }
-        }
-        
-        return true;
     }
 }
 
