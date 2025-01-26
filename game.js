@@ -53,16 +53,62 @@ class Game2048 {
     
     async loadLeaderboard() {
         try {
+            // First get all scores
             const { data, error } = await supabase
                 .from('leaderboard')
-                .select('*')
-                .order('score', { ascending: false })
-                .limit(10);
+                .select('*');
 
             if (error) throw error;
-            this.updateLeaderboardUI(data);
+
+            // Process data to get highest score per user
+            const highestScores = data.reduce((acc, current) => {
+                if (!acc[current.username] || acc[current.username].score < current.score) {
+                    acc[current.username] = current;
+                }
+                return acc;
+            }, {});
+
+            // Convert to array and sort by score
+            const processedData = Object.values(highestScores)
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 10); // Keep only top 10
+
+            this.updateLeaderboardUI(processedData);
         } catch (error) {
             console.error('Error loading leaderboard:', error);
+        }
+    }
+    
+    async saveScore() {
+        if (this.username && this.score > 0) {
+            try {
+                // First check if user already has a higher score
+                const { data, error: fetchError } = await supabase
+                    .from('leaderboard')
+                    .select('score')
+                    .eq('username', this.username)
+                    .order('score', { ascending: false })
+                    .limit(1);
+
+                if (fetchError) throw fetchError;
+
+                // Only save if this is their first score or if it's higher than their previous best
+                if (!data.length || this.score > data[0].score) {
+                    const { error } = await supabase
+                        .from('leaderboard')
+                        .insert([
+                            {
+                                username: this.username,
+                                score: this.score
+                            }
+                        ]);
+
+                    if (error) throw error;
+                    this.loadLeaderboard(); // Refresh the leaderboard
+                }
+            } catch (error) {
+                console.error('Error saving score:', error);
+            }
         }
     }
     
@@ -115,26 +161,6 @@ class Game2048 {
             item.appendChild(scoreSpan);
             this.leaderboardList.appendChild(item);
         });
-    }
-    
-    async saveScore() {
-        if (this.username && this.score > 0) {
-            try {
-                const { error } = await supabase
-                    .from('leaderboard')
-                    .insert([
-                        {
-                            username: this.username,
-                            score: this.score
-                        }
-                    ]);
-
-                if (error) throw error;
-                this.loadLeaderboard(); // Refresh the leaderboard
-            } catch (error) {
-                console.error('Error saving score:', error);
-            }
-        }
     }
     
     initGame() {
