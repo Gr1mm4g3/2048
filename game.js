@@ -10,14 +10,23 @@ class Game2048 {
         this.usernameInput = document.getElementById('username-input');
         this.startGameBtn = document.getElementById('start-game-btn');
         this.leaderboardList = document.getElementById('leaderboard-list');
+        this.gameOverModal = document.getElementById('game-over-modal');
+        this.restartGameBtn = document.getElementById('restart-game-btn');
+        this.themeToggle = document.getElementById('theme-toggle');
         this.username = '';
         
-        // Touch handling variables
-        this.touchStartX = null;
-        this.touchStartY = null;
+        // Sound elements
+        this.moveSound = document.getElementById('move-sound');
+        this.mergeSound = document.getElementById('merge-sound');
+        this.gameOverSound = document.getElementById('game-over-sound');
+        
+        // Initialize theme
+        this.initializeTheme();
         
         this.newGameBtn.addEventListener('click', () => this.showUsernameModal());
         this.startGameBtn.addEventListener('click', () => this.handleStartGame());
+        this.restartGameBtn.addEventListener('click', () => this.handleStartGame());
+        this.themeToggle.addEventListener('click', () => this.toggleTheme());
         
         // Add keyboard event listeners
         document.addEventListener('keydown', (e) => this.handleKeyPress(e));
@@ -34,6 +43,61 @@ class Game2048 {
         this.loadLeaderboard();
     }
     
+    initializeTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        this.updateThemeButton(savedTheme);
+    }
+
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        this.updateThemeButton(newTheme);
+    }
+
+    updateThemeButton(theme) {
+        const icon = this.themeToggle.querySelector('i');
+        const text = this.themeToggle.querySelector('span');
+        
+        if (theme === 'dark') {
+            icon.className = 'fas fa-moon';
+            text.textContent = 'Dark Mode';
+        } else {
+            icon.className = 'fas fa-sun';
+            text.textContent = 'Light Mode';
+        }
+    }
+
+    playSound(sound) {
+        // Reset the sound to start and play
+        sound.currentTime = 0;
+        sound.volume = 0.3; // Set volume to 30%
+        sound.play().catch(e => console.log('Sound play failed:', e));
+    }
+
+    showGameOver(won = false) {
+        const title = document.getElementById('game-over-title');
+        const scoreSpan = document.querySelector('#game-over-score span');
+        
+        title.textContent = won ? 'You Won!' : 'Game Over!';
+        scoreSpan.textContent = this.score;
+        
+        this.gameOverModal.style.display = 'block';
+        this.playSound(this.gameOverSound);
+        
+        if (won) {
+            // Trigger confetti animation
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
+    }
+    
     showUsernameModal() {
         this.usernameModal.style.display = 'block';
         this.usernameInput.value = this.username;
@@ -45,6 +109,7 @@ class Game2048 {
         if (username) {
             this.username = username;
             this.usernameModal.style.display = 'none';
+            this.gameOverModal.style.display = 'none';
             this.initGame();
         } else {
             alert('Please enter a username');
@@ -333,6 +398,7 @@ class Game2048 {
         
         for (let r = 0; r < 4; r++) {
             const row = this.board[r].filter(val => val !== 0);
+            let mergeHappened = false;
             
             // Merge tiles
             for (let c = 0; c < row.length - 1; c++) {
@@ -341,6 +407,7 @@ class Game2048 {
                     this.score += row[c];
                     row.splice(c + 1, 1);
                     moved = true;
+                    mergeHappened = true;
                 }
             }
             
@@ -355,6 +422,15 @@ class Game2048 {
                     moved = true;
                 }
                 this.board[r][c] = row[c];
+            }
+            
+            // Play appropriate sound
+            if (moved) {
+                if (mergeHappened) {
+                    this.playSound(this.mergeSound);
+                } else {
+                    this.playSound(this.moveSound);
+                }
             }
         }
         
@@ -371,6 +447,7 @@ class Game2048 {
         
         for (let r = 0; r < 4; r++) {
             const row = this.board[r].filter(val => val !== 0);
+            let mergeHappened = false;
             
             // Merge tiles
             for (let c = row.length - 1; c > 0; c--) {
@@ -379,6 +456,7 @@ class Game2048 {
                     this.score += row[c];
                     row.splice(c - 1, 1);
                     moved = true;
+                    mergeHappened = true;
                 }
             }
             
@@ -393,6 +471,15 @@ class Game2048 {
                     moved = true;
                 }
                 this.board[r][c] = row[c];
+            }
+            
+            // Play appropriate sound
+            if (moved) {
+                if (mergeHappened) {
+                    this.playSound(this.mergeSound);
+                } else {
+                    this.playSound(this.moveSound);
+                }
             }
         }
         
@@ -414,6 +501,7 @@ class Game2048 {
                     column.push(this.board[r][c]);
                 }
             }
+            let mergeHappened = false;
             
             // Merge tiles
             for (let i = 0; i < column.length - 1; i++) {
@@ -422,6 +510,7 @@ class Game2048 {
                     this.score += column[i];
                     column.splice(i + 1, 1);
                     moved = true;
+                    mergeHappened = true;
                 }
             }
             
@@ -436,6 +525,15 @@ class Game2048 {
                     moved = true;
                 }
                 this.board[r][c] = column[r];
+            }
+            
+            // Play appropriate sound
+            if (moved) {
+                if (mergeHappened) {
+                    this.playSound(this.mergeSound);
+                } else {
+                    this.playSound(this.moveSound);
+                }
             }
         }
         
@@ -457,6 +555,7 @@ class Game2048 {
                     column.push(this.board[r][c]);
                 }
             }
+            let mergeHappened = false;
             
             // Merge tiles
             for (let i = column.length - 1; i > 0; i--) {
@@ -465,6 +564,7 @@ class Game2048 {
                     this.score += column[i];
                     column.splice(i - 1, 1);
                     moved = true;
+                    mergeHappened = true;
                 }
             }
             
@@ -480,6 +580,15 @@ class Game2048 {
                 }
                 this.board[r][c] = column[r];
             }
+            
+            // Play appropriate sound
+            if (moved) {
+                if (mergeHappened) {
+                    this.playSound(this.mergeSound);
+                } else {
+                    this.playSound(this.moveSound);
+                }
+            }
         }
         
         if (moved) {
@@ -490,41 +599,44 @@ class Game2048 {
     }
     
     checkGameStatus() {
-        // Check if game is over
-        let isGameOver = true;
+        // Check for 2048 tile
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 4; c++) {
+                if (this.board[r][c] === 2048) {
+                    this.showGameOver(true);
+                    return;
+                }
+            }
+        }
         
+        // Check for available moves
+        if (this.isGameOver()) {
+            this.showGameOver(false);
+        }
+    }
+
+    isGameOver() {
         // Check for empty cells
         for (let r = 0; r < 4; r++) {
             for (let c = 0; c < 4; c++) {
-                if (this.board[r][c] === 0) {
-                    isGameOver = false;
-                    break;
-                }
+                if (this.board[r][c] === 0) return false;
             }
         }
         
         // Check for possible merges
-        if (isGameOver) {
-            for (let r = 0; r < 4; r++) {
-                for (let c = 0; c < 4; c++) {
-                    if (
-                        (r < 3 && this.board[r][c] === this.board[r + 1][c]) ||
-                        (c < 3 && this.board[r][c] === this.board[r][c + 1])
-                    ) {
-                        isGameOver = false;
-                        break;
-                    }
-                }
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 4; c++) {
+                const current = this.board[r][c];
+                
+                // Check right
+                if (c < 3 && current === this.board[r][c + 1]) return false;
+                
+                // Check down
+                if (r < 3 && current === this.board[r + 1][c]) return false;
             }
         }
         
-        if (isGameOver) {
-            this.saveScore();
-            setTimeout(() => {
-                alert(`Game Over! Your score: ${this.score}`);
-                this.showUsernameModal();
-            }, 500);
-        }
+        return true;
     }
 }
 
