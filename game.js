@@ -686,9 +686,14 @@ class Game2048 {
     }
 }
 
-// Prevent page refresh on swipe down
+// Allow swiping but prevent refresh on downward swipe at top
+window.addEventListener('touchstart', function(event) {
+    this.startY = event.touches[0].clientY;
+}, { passive: true });
+
 window.addEventListener('touchmove', function(event) {
-    if (event.touches.length === 1 && event.touches[0].clientY > 0 && window.scrollY === 0) {
+    const moveY = event.touches[0].clientY;
+    if (this.startY < moveY && window.scrollY === 0) {
         event.preventDefault();
     }
 }, { passive: false });
