@@ -688,7 +688,7 @@ class Game2048 {
 
 // Prevent page refresh on swipe down
 window.addEventListener('touchmove', function(event) {
-    if (event.touches[0].clientY > 0 && window.scrollY === 0) {
+    if (event.touches.length === 1 && event.touches[0].clientY > 0 && window.scrollY === 0) {
         event.preventDefault();
     }
 }, { passive: false });
