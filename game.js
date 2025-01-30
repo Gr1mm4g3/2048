@@ -269,6 +269,7 @@ class Game2048 {
                 championBadge.className = 'champion-badge';
                 championBadge.textContent = 'Champion';
                 nameSpan.appendChild(championBadge);
+                championBadge.addEventListener('mouseenter', this.createFireworks);
             }
             playerInfo.appendChild(nameSpan);
             
@@ -683,6 +684,36 @@ class Game2048 {
         }
         
         return moved;
+    }
+
+    createFireworks(event) {
+        // Get the position of the hovered element
+        const rect = event.target.getBoundingClientRect();
+        const x = (rect.left + rect.right) / 2;
+        const y = (rect.top + rect.bottom) / 2;
+
+        // Convert to normalized coordinates (0 to 1)
+        const normalizedX = x / window.innerWidth;
+        const normalizedY = y / window.innerHeight;
+
+        // Create multiple firework bursts
+        const fireworkCount = 3;
+        const colors = ['#FFD700', '#FFA500', '#FF4500']; // Gold, Orange, Red
+
+        for (let i = 0; i < fireworkCount; i++) {
+            setTimeout(() => {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { x: normalizedX, y: normalizedY },
+                    colors: colors,
+                    startVelocity: 30,
+                    gravity: 0.8,
+                    scalar: 0.9,
+                    ticks: 100
+                });
+            }, i * 200); // Stagger the fireworks
+        }
     }
 }
 
