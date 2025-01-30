@@ -177,7 +177,9 @@ h1 {
 }
 
 .game-controls {
-    margin-top: 20px;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
 }
 
 #new-game-btn, #start-game-btn, #restart-game-btn {
@@ -369,6 +371,13 @@ h1 {
 
 .theme-toggle:hover {
     transform: scale(1.05);
+}
+
+/* Removed confetti and fireworks styles */
+
+.champion-card {
+    position: relative;
+    overflow: hidden;
 }
 
 @media (max-width: 768px) {

@@ -139,15 +139,6 @@ class Game2048 {
         
         this.gameOverModal.style.display = 'block';
         this.playSound('gameOver');
-        
-        if (won) {
-            // Trigger confetti animation
-            confetti({
-                particleCount: 100,
-                spread: 70,
-                origin: { y: 0.6 }
-            });
-        }
     }
     
     showUsernameModal() {
@@ -694,6 +685,13 @@ class Game2048 {
         return moved;
     }
 }
+
+// Prevent page refresh on swipe down
+window.addEventListener('touchmove', function(event) {
+    if (event.touches[0].clientY > 0 && window.scrollY === 0) {
+        event.preventDefault();
+    }
+}, { passive: false });
 
 // Initialize the game when the page loads
 document.addEventListener('DOMContentLoaded', () => {
