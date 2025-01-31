@@ -14,6 +14,11 @@ class Game2048 {
         this.restartGameBtn = document.getElementById('restart-game-btn');
         this.themeToggle = document.getElementById('theme-toggle');
         this.username = '';
+        this.isSoundMuted = localStorage.getItem('soundMuted') === 'true';
+        this.audioContext = null;
+        this.soundToggleButton = document.getElementById('sound-toggle');
+        this.soundIcon = this.soundToggleButton.querySelector('i');
+        this.soundLabel = this.soundToggleButton.querySelector('.sound-label');
         
         // Initialize sounds with proper error handling
         this.sounds = {
@@ -71,6 +76,9 @@ class Game2048 {
         
         // Load leaderboard
         this.loadLeaderboard();
+        
+        // Initialize sound toggle functionality
+        this.setupSoundToggle();
     }
     
     initializeTheme() {
@@ -101,29 +109,80 @@ class Game2048 {
         }
     }
 
+    setupSoundToggle() {
+        // Update UI based on initial state
+        this.updateSoundToggleUI();
+
+        // Add click event listener
+        this.soundToggleButton.addEventListener('click', () => {
+            this.isSoundMuted = !this.isSoundMuted;
+            localStorage.setItem('soundMuted', this.isSoundMuted);
+            this.updateSoundToggleUI();
+        });
+    }
+
+    updateSoundToggleUI() {
+        if (this.isSoundMuted) {
+            this.soundToggleButton.classList.add('muted');
+            this.soundIcon.className = 'fas fa-volume-mute';
+            this.soundLabel.textContent = 'Sound Off';
+        } else {
+            this.soundToggleButton.classList.remove('muted');
+            this.soundIcon.className = 'fas fa-volume-up';
+            this.soundLabel.textContent = 'Sound On';
+        }
+    }
+
     playSound(soundName) {
+        // Don't play sound if muted
+        if (this.isSoundMuted) {
+            return;
+        }
+
         try {
+            // Initialize audio context if needed
+            if (!this.audioContext) {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
             // Resume AudioContext if it was suspended
             if (this.audioContext.state === 'suspended') {
                 this.audioContext.resume();
             }
 
+            // Create oscillator and gain nodes
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+
+            // Configure sound based on type
             switch (soundName) {
                 case 'move':
-                    this.playTone(220, 0.1, 'sine'); // A3 note, short duration
+                    oscillator.frequency.setValueAtTime(220, this.audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
                     break;
                 case 'merge':
-                    this.playTone(440, 0.15, 'square'); // A4 note, slightly longer
+                    oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
+                    oscillator.type = 'triangle';
+                    gainNode.gain.setValueAtTime(0.4, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
                     break;
                 case 'gameOver':
-                    // Play a sequence of tones for game over
-                    this.playTone(440, 0.1, 'sine');
-                    setTimeout(() => this.playTone(330, 0.1, 'sine'), 100);
-                    setTimeout(() => this.playTone(220, 0.2, 'sine'), 200);
+                    oscillator.frequency.setValueAtTime(180, this.audioContext.currentTime);
+                    oscillator.type = 'sawtooth';
+                    gainNode.gain.setValueAtTime(0.5, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
                     break;
             }
+
+            // Connect nodes and start sound
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            oscillator.start();
+            oscillator.stop(this.audioContext.currentTime + 0.5);
         } catch (error) {
-            console.log(`Error playing sound: ${soundName}`, error);
+            console.error('Error playing sound:', error);
         }
     }
     

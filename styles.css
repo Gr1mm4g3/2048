@@ -423,6 +423,42 @@ h1 {
     overflow: hidden;
 }
 
+/* Sound Toggle Button */
+.sound-toggle {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background-color: var(--button-bg);
+    color: var(--button-color);
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    font-size: 16px;
+}
+
+.sound-toggle:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sound-toggle i {
+    font-size: 18px;
+}
+
+.sound-toggle.muted i {
+    color: #ff4444;
+}
+
+.sound-toggle.muted .sound-label {
+    color: #ff4444;
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 0 15px;
