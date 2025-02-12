@@ -232,23 +232,33 @@ class Game2048 {
                 throw error;
             }
 
-            console.log('Raw leaderboard data:', data);
-
-            // Process data to get highest score per user
-            const highestScores = data.reduce((acc, current) => {
-                if (!acc[current.username] || acc[current.username].score < current.score) {
-                    acc[current.username] = current;
+            // Process data to get highest score and total games per user
+            const userStats = data.reduce((acc, current) => {
+                if (!acc[current.username]) {
+                    acc[current.username] = {
+                        username: current.username,
+                        score: current.score,
+                        gamesPlayed: 1,
+                        totalScore: current.score
+                    };
+                } else {
+                    // Update highest score if current score is higher
+                    if (acc[current.username].score < current.score) {
+                        acc[current.username].score = current.score;
+                    }
+                    // Increment games played and add to total score
+                    acc[current.username].gamesPlayed++;
+                    acc[current.username].totalScore += current.score;
                 }
                 return acc;
             }, {});
 
             // Convert to array and sort by score
-            const processedData = Object.values(highestScores)
+            const processedData = Object.values(userStats)
                 .sort((a, b) => b.score - a.score)
-                .slice(0, 10); // Keep only top 10
+                .slice(0, 20); // Keep top 20 instead of 10
 
             console.log('Processed leaderboard data:', processedData);
-            
             this.updateLeaderboardUI(processedData);
         } catch (error) {
             console.error('Error loading leaderboard:', error);
@@ -291,52 +301,101 @@ class Game2048 {
     
     updateLeaderboardUI(leaderboard) {
         this.leaderboardList.innerHTML = '';
+        
+        // Find the player with most games and highest total score
+        const mostGamesPlayed = Math.max(...leaderboard.map(entry => entry.gamesPlayed));
+        const highestTotalScore = Math.max(...leaderboard.map(entry => entry.totalScore));
+        
         leaderboard.forEach((entry, index) => {
             const item = document.createElement('div');
             item.className = 'leaderboard-item';
             
-            // Add special classes for top 3
             if (index === 0) item.classList.add('gold');
             if (index === 1) item.classList.add('silver');
             if (index === 2) item.classList.add('bronze');
             
-            // Get medal emoji based on position
             let medal = '';
             if (index === 0) medal = '🏆';
             else if (index === 1) medal = '🥈';
             else if (index === 2) medal = '🥉';
             
-            const playerInfo = document.createElement('div');
-            playerInfo.className = 'player-info';
+            const leftSection = document.createElement('div');
+            leftSection.className = 'leaderboard-left';
+            
+            const rankAndName = document.createElement('div');
+            rankAndName.className = 'rank-and-name';
             
             if (medal) {
                 const medalSpan = document.createElement('span');
                 medalSpan.className = 'medal';
                 medalSpan.textContent = medal;
-                playerInfo.appendChild(medalSpan);
+                rankAndName.appendChild(medalSpan);
             }
             
             const rankSpan = document.createElement('span');
             rankSpan.className = 'rank';
             rankSpan.textContent = `#${index + 1}`;
-            playerInfo.appendChild(rankSpan);
+            rankAndName.appendChild(rankSpan);
             
             const nameSpan = document.createElement('span');
-            nameSpan.textContent = entry.username;
+            nameSpan.className = 'player-name';
+            nameSpan.textContent = ` ${entry.username}`;
+            
             if (index === 0) {
                 const championBadge = document.createElement('span');
                 championBadge.className = 'champion-badge';
-                championBadge.textContent = 'Champion';
+                championBadge.textContent = 'CHAMPION';
                 nameSpan.appendChild(championBadge);
                 championBadge.addEventListener('mouseenter', this.createFireworks);
             }
-            playerInfo.appendChild(nameSpan);
             
-            const scoreSpan = document.createElement('span');
-            scoreSpan.textContent = entry.score;
+            // Add Most Active badge if this player has the most games
+            if (entry.gamesPlayed === mostGamesPlayed && mostGamesPlayed > 1) {
+                const activeBadge = document.createElement('span');
+                activeBadge.className = 'active-badge';
+                activeBadge.textContent = 'MOST ACTIVE';
+                nameSpan.appendChild(activeBadge);
+                activeBadge.addEventListener('mouseenter', this.createFireworks);
+            }
+
+            // Add Total Score badge if this player has the highest total score
+            if (entry.totalScore === highestTotalScore && entry.gamesPlayed > 1) {
+                const totalScoreBadge = document.createElement('span');
+                totalScoreBadge.className = 'total-score-badge';
+                
+                const mvpText = document.createElement('span');
+                mvpText.className = 'mvp-text';
+                mvpText.textContent = 'MVP';
+                
+                const totalPoints = document.createElement('span');
+                totalPoints.className = 'total-points';
+                totalPoints.textContent = ` ${entry.totalScore.toLocaleString()}`;
+                
+                totalScoreBadge.appendChild(mvpText);
+                totalScoreBadge.appendChild(totalPoints);
+                nameSpan.appendChild(totalScoreBadge);
+                totalScoreBadge.addEventListener('mouseenter', this.createFireworks);
+            }
             
-            item.appendChild(playerInfo);
-            item.appendChild(scoreSpan);
+            rankAndName.appendChild(nameSpan);
+            leftSection.appendChild(rankAndName);
+            
+            const rightSection = document.createElement('div');
+            rightSection.className = 'leaderboard-right';
+            
+            const scoreDiv = document.createElement('div');
+            scoreDiv.className = 'score-info';
+            scoreDiv.textContent = entry.score;
+            
+            const gamesDiv = document.createElement('div');
+            gamesDiv.className = 'games-info';
+            gamesDiv.textContent = `${entry.gamesPlayed} games`;
+            
+            rightSection.appendChild(scoreDiv);
+            rightSection.appendChild(gamesDiv);
+            
+            item.appendChild(leftSection);
+            item.appendChild(rightSection);
             this.leaderboardList.appendChild(item);
         });
     }

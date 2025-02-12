@@ -197,8 +197,33 @@ h1 {
     background-color: #9f8a76;
 }
 
+.leaderboard-container {
+    max-height: 80vh;
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-top: 20px;
+}
+
+/* Add a subtle scrollbar style */
+.leaderboard-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.leaderboard-container::-webkit-scrollbar-track {
+    background: rgba(238, 228, 218, 0.35);
+    border-radius: 4px;
+}
+
+.leaderboard-container::-webkit-scrollbar-thumb {
+    background: #bbada0;
+    border-radius: 4px;
+}
+
+.leaderboard-container::-webkit-scrollbar-thumb:hover {
+    background: #a09588;
+}
+
 .leaderboard {
-    margin-top: 30px;
     background-color: var(--grid-color);
     padding: 15px;
     border-radius: 5px;
@@ -219,31 +244,65 @@ h1 {
 
 .leaderboard-item {
     background-color: rgba(238, 228, 218, 0.35);
-    padding: 10px;
+    padding: 10px 15px;
     border-radius: 3px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     transition: transform 0.2s ease;
+    margin-bottom: 5px;
 }
 
-.leaderboard-item:hover {
-    transform: scale(1.02);
+.leaderboard-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rank-and-name {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.leaderboard-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.score-info {
+    font-weight: bold;
+    min-width: 60px;
+    text-align: right;
+}
+
+.games-info {
+    font-size: 0.9em;
+    color: white;
+    min-width: 70px;
+    text-align: right;
 }
 
 .leaderboard-item.gold {
-    position: relative;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
     background: linear-gradient(135deg, #ffd700 0%, #ffecb3 100%);
     color: #333;
     font-weight: bold;
     box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
 }
 
-.leaderboard-item.gold:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.5);
-    animation: pulse 1s infinite;
+.leaderboard-item.gold .games-info,
+.leaderboard-item.silver .games-info,
+.leaderboard-item.bronze .games-info {
+    color: #333;
+}
+
+.leaderboard-item:hover {
+    transform: scale(1.02);
+}
+
+.medal {
+    margin-right: 5px;
 }
 
 .leaderboard-item.silver {
@@ -258,11 +317,6 @@ h1 {
     color: #333;
     font-weight: bold;
     box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
-}
-
-.medal {
-    font-size: 20px;
-    margin-right: 10px;
 }
 
 .player-info {
@@ -298,6 +352,77 @@ h1 {
     letter-spacing: 1px;
     margin-left: 12px;
     margin-right: 4px;
+}
+
+.active-badge {
+    background: linear-gradient(45deg, #43A047, #66BB6A);
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(67, 160, 71, 0.5);
+    box-shadow: 0 2px 4px rgba(67, 160, 71, 0.2);
+    animation: shine 2s infinite;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-item:hover .active-badge {
+    transform: scale(1.1) rotate(-3deg);
+    box-shadow: 0 4px 8px rgba(67, 160, 71, 0.4);
+    background: linear-gradient(45deg, #388E3C, #4CAF50);
+    letter-spacing: 1px;
+    margin-left: 12px;
+    margin-right: 4px;
+}
+
+.champion-badge + .active-badge {
+    margin-left: 12px;
+}
+
+.total-score-badge {
+    background: linear-gradient(45deg, #9C27B0, #BA68C8);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(156, 39, 176, 0.5);
+    box-shadow: 0 2px 4px rgba(156, 39, 176, 0.2);
+    animation: shine 2s infinite;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.total-score-badge .mvp-text {
+    font-weight: 800;
+}
+
+.total-score-badge .total-points {
+    font-size: 11px;
+    opacity: 0.9;
+}
+
+.leaderboard-item:hover .total-score-badge {
+    transform: scale(1.1) rotate(-3deg);
+    box-shadow: 0 4px 8px rgba(156, 39, 176, 0.4);
+    background: linear-gradient(45deg, #7B1FA2, #AB47BC);
+    letter-spacing: 1px;
+    margin-left: 12px;
+    margin-right: 4px;
+}
+
+.champion-badge + .total-score-badge,
+.active-badge + .total-score-badge {
+    margin-left: 12px;
 }
 
 @keyframes shine {
