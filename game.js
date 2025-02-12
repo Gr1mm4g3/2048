@@ -239,19 +239,40 @@ class Game2048 {
                         username: current.username,
                         score: current.score,
                         gamesPlayed: 1,
-                        totalScore: current.score
+                        totalScore: current.score,
+                        minScore: current.score,
+                        maxScore: current.score,
+                        scores: [current.score]
                     };
                 } else {
-                    // Update highest score if current score is higher
+                    // Update highest and lowest scores
                     if (acc[current.username].score < current.score) {
                         acc[current.username].score = current.score;
                     }
+                    acc[current.username].maxScore = Math.max(acc[current.username].maxScore, current.score);
+                    acc[current.username].minScore = Math.min(acc[current.username].minScore, current.score);
+                    // Track all scores for calculating consistency
+                    acc[current.username].scores.push(current.score);
                     // Increment games played and add to total score
                     acc[current.username].gamesPlayed++;
                     acc[current.username].totalScore += current.score;
                 }
                 return acc;
             }, {});
+
+            // Calculate score improvements and consistency
+            Object.values(userStats).forEach(user => {
+                if (user.gamesPlayed >= 10) {
+                    // Calculate improvement (difference between max and min scores)
+                    user.improvement = user.maxScore - user.minScore;
+                    
+                    // Calculate consistency (standard deviation of scores)
+                    const mean = user.totalScore / user.gamesPlayed;
+                    const squareDiffs = user.scores.map(score => Math.pow(score - mean, 2));
+                    const avgSquareDiff = squareDiffs.reduce((a, b) => a + b) / user.scores.length;
+                    user.consistency = Math.sqrt(avgSquareDiff);
+                }
+            });
 
             // Convert to array and sort by score
             const processedData = Object.values(userStats)
@@ -302,9 +323,16 @@ class Game2048 {
     updateLeaderboardUI(leaderboard) {
         this.leaderboardList.innerHTML = '';
         
-        // Find the player with most games and highest total score
+        // Find players with special achievements
         const mostGamesPlayed = Math.max(...leaderboard.map(entry => entry.gamesPlayed));
         const highestTotalScore = Math.max(...leaderboard.map(entry => entry.totalScore));
+        
+        // Find the player with biggest improvement and most consistent scores
+        const validPlayers = leaderboard.filter(entry => entry.gamesPlayed >= 10);
+        const biggestImprovement = validPlayers.length > 0 ? 
+            Math.max(...validPlayers.map(entry => entry.improvement)) : 0;
+        const bestConsistency = validPlayers.length > 0 ? 
+            Math.min(...validPlayers.map(entry => entry.consistency)) : Infinity;
         
         leaderboard.forEach((entry, index) => {
             const item = document.createElement('div');
@@ -345,17 +373,18 @@ class Game2048 {
                 const championBadge = document.createElement('span');
                 championBadge.className = 'champion-badge';
                 championBadge.textContent = 'CHAMPION';
+                championBadge.title = 'Highest single game score - you are the champion!';
                 nameSpan.appendChild(championBadge);
-                championBadge.addEventListener('mouseenter', this.createFireworks);
+                championBadge.addEventListener('mouseenter', this.createFireworks.bind(this));
             }
-            
+
             // Add Most Active badge if this player has the most games
             if (entry.gamesPlayed === mostGamesPlayed && mostGamesPlayed > 1) {
                 const activeBadge = document.createElement('span');
                 activeBadge.className = 'active-badge';
                 activeBadge.textContent = 'MOST ACTIVE';
+                activeBadge.title = 'Play more games than anyone else to earn this badge';
                 nameSpan.appendChild(activeBadge);
-                activeBadge.addEventListener('mouseenter', this.createFireworks);
             }
 
             // Add Total Score badge if this player has the highest total score
@@ -373,8 +402,26 @@ class Game2048 {
                 
                 totalScoreBadge.appendChild(mvpText);
                 totalScoreBadge.appendChild(totalPoints);
+                totalScoreBadge.title = 'Have the highest combined score across all games';
                 nameSpan.appendChild(totalScoreBadge);
-                totalScoreBadge.addEventListener('mouseenter', this.createFireworks);
+            }
+
+            // Add Comeback King badge for biggest score improvement
+            if (entry.improvement === biggestImprovement && entry.gamesPlayed >= 10) {
+                const comebackBadge = document.createElement('span');
+                comebackBadge.className = 'comeback-badge';
+                comebackBadge.textContent = 'COMEBACK KING';
+                comebackBadge.title = `Play at least 10 games and have the biggest improvement between your lowest and highest scores\nCurrent improvement: ${entry.improvement.toLocaleString()} points`;
+                nameSpan.appendChild(comebackBadge);
+            }
+
+            // Add Consistent badge for smallest score variance
+            if (entry.consistency === bestConsistency && entry.gamesPlayed >= 10) {
+                const consistentBadge = document.createElement('span');
+                consistentBadge.className = 'consistent-badge';
+                consistentBadge.textContent = 'CONSISTENT';
+                consistentBadge.title = `Play at least 10 games and maintain the most consistent scores\nCurrent variance: ${Math.round(entry.consistency).toLocaleString()} points`;
+                nameSpan.appendChild(consistentBadge);
             }
             
             rankAndName.appendChild(nameSpan);

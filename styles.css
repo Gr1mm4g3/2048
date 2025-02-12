@@ -425,6 +425,66 @@ h1 {
     margin-left: 12px;
 }
 
+.comeback-badge {
+    background: linear-gradient(45deg, #FF5722, #FF9800);
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255, 87, 34, 0.5);
+    box-shadow: 0 2px 4px rgba(255, 87, 34, 0.2);
+    animation: shine 2s infinite;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-item:hover .comeback-badge {
+    transform: scale(1.1) rotate(-3deg);
+    box-shadow: 0 4px 8px rgba(255, 87, 34, 0.4);
+    background: linear-gradient(45deg, #F4511E, #FB8C00);
+    letter-spacing: 1px;
+    margin-left: 12px;
+    margin-right: 4px;
+}
+
+.consistent-badge {
+    background: linear-gradient(45deg, #00BCD4, #4DD0E1);
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(0, 188, 212, 0.5);
+    box-shadow: 0 2px 4px rgba(0, 188, 212, 0.2);
+    animation: shine 2s infinite;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-item:hover .consistent-badge {
+    transform: scale(1.1) rotate(-3deg);
+    box-shadow: 0 4px 8px rgba(0, 188, 212, 0.4);
+    background: linear-gradient(45deg, #0097A7, #26C6DA);
+    letter-spacing: 1px;
+    margin-left: 12px;
+    margin-right: 4px;
+}
+
+.champion-badge + .comeback-badge,
+.champion-badge + .consistent-badge,
+.active-badge + .comeback-badge,
+.active-badge + .consistent-badge,
+.total-score-badge + .comeback-badge,
+.total-score-badge + .consistent-badge,
+.comeback-badge + .consistent-badge {
+    margin-left: 12px;
+}
+
 @keyframes shine {
     0% {
         background-position: 0% 50%;
@@ -582,6 +642,65 @@ h1 {
 
 .sound-toggle.muted .sound-label {
     color: #ff4444;
+}
+
+/* Badge tooltips */
+.active-badge,
+.total-score-badge,
+.comeback-badge,
+.consistent-badge {
+    position: relative;
+    cursor: help;
+}
+
+/* Enhance default tooltip appearance */
+[title] {
+    position: relative;
+    cursor: help;
+}
+
+[title]:hover::before {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 12px;
+    white-space: pre-wrap;
+    border-radius: 4px;
+    z-index: 1000;
+    width: max-content;
+    max-width: 200px;
+    text-align: center;
+    pointer-events: none;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+[title]:hover::after {
+    content: '';
+    position: absolute;
+    bottom: 90%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    pointer-events: none;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 }
 
 @media (max-width: 768px) {
