@@ -65,11 +65,12 @@ h1 {
     grid-template-columns: repeat(4, 1fr);
     gap: 15px;
     background-color: var(--grid-color);
-    border-radius: 5px;
+    border-radius: 6px;
     padding: 15px;
     width: 500px;
     height: 500px;
     transition: background-color var(--transition-time);
+    margin-bottom: 40px;
 }
 
 .grid-cell {
@@ -198,13 +199,16 @@ h1 {
 }
 
 .leaderboard-container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding-top: 30px;  
+    border-top: 2px solid rgba(119, 110, 101, 0.1);  
+    margin-top: 30px;  
     max-height: 80vh;
     overflow-y: auto;
     padding-right: 10px;
-    margin-top: 20px;
 }
 
-/* Add a subtle scrollbar style */
 .leaderboard-container::-webkit-scrollbar {
     width: 8px;
 }
@@ -223,17 +227,31 @@ h1 {
     background: #a09588;
 }
 
+.leaderboard-title {
+    font-size: 24px;
+    color: #776e65;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
 .leaderboard {
     background-color: var(--grid-color);
     padding: 15px;
     border-radius: 5px;
     color: white;
     transition: background-color var(--transition-time);
+    padding-top: 20px;
+    border-top: 2px solid rgba(119, 110, 101, 0.2);
 }
 
 .leaderboard h2 {
     margin: 0 0 15px 0;
     font-size: 24px;
+    color: #776e65;
+    text-align: center;
+    margin-bottom: 20px;
+    margin-top: 0;
 }
 
 #leaderboard-list {
@@ -482,6 +500,207 @@ h1 {
 .total-score-badge + .comeback-badge,
 .total-score-badge + .consistent-badge,
 .comeback-badge + .consistent-badge {
+    margin-left: 12px;
+}
+
+.perfectionist-badge {
+    background: linear-gradient(45deg, #E91E63, #FF4081);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(233, 30, 99, 0.5);
+    box-shadow: 0 2px 4px rgba(233, 30, 99, 0.2);
+    animation: shine 2s infinite;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-item:hover .perfectionist-badge {
+    transform: scale(1.1) rotate(-3deg);
+    box-shadow: 0 4px 8px rgba(233, 30, 99, 0.4);
+    background: linear-gradient(45deg, #C2185B, #F50057);
+    letter-spacing: 1px;
+    margin-left: 12px;
+    margin-right: 4px;
+}
+
+.speedster-badge {
+    background: linear-gradient(45deg, #FFEB3B, #FFC107);
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255, 235, 59, 0.5);
+    box-shadow: 0 2px 4px rgba(255, 235, 59, 0.2);
+    animation: shine 2s infinite;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-item:hover .speedster-badge {
+    transform: scale(1.1) rotate(-3deg);
+    box-shadow: 0 4px 8px rgba(255, 235, 59, 0.4);
+    background: linear-gradient(45deg, #FDD835, #FFB300);
+    letter-spacing: 1px;
+    margin-left: 12px;
+    margin-right: 4px;
+}
+
+.night-owl-badge {
+    background: linear-gradient(45deg, #3F51B5, #7986CB);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(63, 81, 181, 0.5);
+    box-shadow: 0 2px 4px rgba(63, 81, 181, 0.2);
+    animation: shine 2s infinite;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-item:hover .night-owl-badge {
+    transform: scale(1.1) rotate(-3deg);
+    box-shadow: 0 4px 8px rgba(63, 81, 181, 0.4);
+    background: linear-gradient(45deg, #303F9F, #5C6BC0);
+    letter-spacing: 1px;
+    margin-left: 12px;
+    margin-right: 4px;
+}
+
+.champion-badge + .perfectionist-badge,
+.champion-badge + .speedster-badge,
+.champion-badge + .night-owl-badge,
+.active-badge + .perfectionist-badge,
+.active-badge + .speedster-badge,
+.active-badge + .night-owl-badge,
+.total-score-badge + .perfectionist-badge,
+.total-score-badge + .speedster-badge,
+.total-score-badge + .night-owl-badge,
+.comeback-badge + .perfectionist-badge,
+.comeback-badge + .speedster-badge,
+.comeback-badge + .night-owl-badge,
+.consistent-badge + .perfectionist-badge,
+.consistent-badge + .speedster-badge,
+.consistent-badge + .night-owl-badge,
+.perfectionist-badge + .speedster-badge,
+.perfectionist-badge + .night-owl-badge,
+.speedster-badge + .night-owl-badge {
+    margin-left: 12px;
+}
+
+.weekend-badge {
+    background: linear-gradient(45deg, #FF9800, #FF5722);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255, 152, 0, 0.5);
+    box-shadow: 0 2px 4px rgba(255, 152, 0, 0.2);
+    animation: shine 2s infinite;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-item:hover .weekend-badge {
+    transform: scale(1.1) rotate(-3deg);
+    box-shadow: 0 4px 8px rgba(255, 152, 0, 0.4);
+    background: linear-gradient(45deg, #F57C00, #E64A19);
+    letter-spacing: 1px;
+    margin-left: 12px;
+    margin-right: 4px;
+}
+
+.early-bird-badge {
+    background: linear-gradient(45deg, #FFB300, #FDD835);
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255, 179, 0, 0.5);
+    box-shadow: 0 2px 4px rgba(255, 179, 0, 0.2);
+    animation: shine 2s infinite;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-item:hover .early-bird-badge {
+    transform: scale(1.1) rotate(-3deg);
+    box-shadow: 0 4px 8px rgba(255, 179, 0, 0.4);
+    background: linear-gradient(45deg, #FFA000, #FBC02D);
+    letter-spacing: 1px;
+    margin-left: 12px;
+    margin-right: 4px;
+}
+
+.streak-badge {
+    background: linear-gradient(45deg, #F44336, #FF5252);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(244, 67, 54, 0.5);
+    box-shadow: 0 2px 4px rgba(244, 67, 54, 0.2);
+    animation: shine 2s infinite;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-item:hover .streak-badge {
+    transform: scale(1.1) rotate(-3deg);
+    box-shadow: 0 4px 8px rgba(244, 67, 54, 0.4);
+    background: linear-gradient(45deg, #D32F2F, #FF1744);
+    letter-spacing: 1px;
+    margin-left: 12px;
+    margin-right: 4px;
+}
+
+.champion-badge + .weekend-badge,
+.champion-badge + .early-bird-badge,
+.champion-badge + .streak-badge,
+.active-badge + .weekend-badge,
+.active-badge + .early-bird-badge,
+.active-badge + .streak-badge,
+.total-score-badge + .weekend-badge,
+.total-score-badge + .early-bird-badge,
+.total-score-badge + .streak-badge,
+.comeback-badge + .weekend-badge,
+.comeback-badge + .early-bird-badge,
+.comeback-badge + .streak-badge,
+.consistent-badge + .weekend-badge,
+.consistent-badge + .early-bird-badge,
+.consistent-badge + .streak-badge,
+.perfectionist-badge + .weekend-badge,
+.perfectionist-badge + .early-bird-badge,
+.perfectionist-badge + .streak-badge,
+.speedster-badge + .weekend-badge,
+.speedster-badge + .early-bird-badge,
+.speedster-badge + .streak-badge,
+.night-owl-badge + .weekend-badge,
+.night-owl-badge + .early-bird-badge,
+.night-owl-badge + .streak-badge,
+.weekend-badge + .early-bird-badge,
+.weekend-badge + .streak-badge,
+.early-bird-badge + .streak-badge {
     margin-left: 12px;
 }
 

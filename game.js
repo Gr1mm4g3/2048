@@ -242,20 +242,46 @@ class Game2048 {
                         totalScore: current.score,
                         minScore: current.score,
                         maxScore: current.score,
-                        scores: [current.score]
+                        scores: [current.score],
+                        highestTile: current.highest_tile || 0,
+                        fastestHighScore: current.score >= 10000 ? current.duration : Infinity,
+                        nightGames: this.isNightTime(current.created_at) ? 1 : 0,
+                        weekendGames: this.isWeekend(current.created_at) ? 1 : 0,
+                        earlyGames: this.isEarlyMorning(current.created_at) ? 1 : 0,
+                        allDates: [current.created_at]
                     };
                 } else {
-                    // Update highest and lowest scores
+                    // Update existing stats...
                     if (acc[current.username].score < current.score) {
                         acc[current.username].score = current.score;
                     }
                     acc[current.username].maxScore = Math.max(acc[current.username].maxScore, current.score);
                     acc[current.username].minScore = Math.min(acc[current.username].minScore, current.score);
-                    // Track all scores for calculating consistency
                     acc[current.username].scores.push(current.score);
-                    // Increment games played and add to total score
                     acc[current.username].gamesPlayed++;
                     acc[current.username].totalScore += current.score;
+                    acc[current.username].highestTile = Math.max(acc[current.username].highestTile, current.highest_tile || 0);
+                    
+                    if (current.score >= 10000) {
+                        acc[current.username].fastestHighScore = Math.min(
+                            acc[current.username].fastestHighScore,
+                            current.duration || Infinity
+                        );
+                    }
+                    
+                    if (this.isNightTime(current.created_at)) {
+                        acc[current.username].nightGames++;
+                    }
+                    
+                    if (this.isWeekend(current.created_at)) {
+                        acc[current.username].weekendGames++;
+                    }
+                    
+                    if (this.isEarlyMorning(current.created_at)) {
+                        acc[current.username].earlyGames++;
+                    }
+                    
+                    acc[current.username].allDates.push(current.created_at);
                 }
                 return acc;
             }, {});
@@ -287,36 +313,33 @@ class Game2048 {
     }
     
     async saveScore() {
-        console.log('Attempting to save score:', { username: this.username, score: this.score });
+        if (!this.username) return;
         
-        if (this.username && this.score > 0) {
-            try {
-                // Always insert a new record
-                const { data: saveData, error: saveError } = await supabase
-                    .from('leaderboard')
-                    .insert({
-                        username: this.username,
-                        score: this.score,
-                        created_at: new Date().toISOString()
-                    });
-
-                if (saveError) {
-                    console.error('Error saving score:', saveError);
-                    throw saveError;
-                }
-
-                console.log('Score saved successfully:', saveData);
-
-                // Reload the leaderboard to show the updated score
-                await this.loadLeaderboard();
-            } catch (error) {
-                console.error('Error in saveScore:', error);
-            }
-        } else {
-            console.log('Score not saved - invalid username or score:', {
-                username: this.username,
-                score: this.score
-            });
+        // Calculate highest tile from the cells array
+        const highestTile = Math.max(...this.board.flat()
+            .filter(cell => cell !== 0)
+            .map(cell => cell));
+            
+        // Prepare the game data with all columns
+        const gameData = {
+            username: this.username,
+            score: this.score,
+            highest_tile: highestTile,
+            duration: Math.floor((Date.now() - this.gameStartTime) / 1000), // Duration in seconds
+            created_at: new Date().toISOString()
+        };
+        
+        try {
+            const { data, error } = await supabase
+                .from('leaderboard')
+                .insert([gameData]);
+                
+            if (error) throw error;
+            
+            console.log('Score saved:', gameData);
+            await this.loadLeaderboard();
+        } catch (error) {
+            console.error('Error saving score:', error);
         }
     }
     
@@ -326,13 +349,11 @@ class Game2048 {
         // Find players with special achievements
         const mostGamesPlayed = Math.max(...leaderboard.map(entry => entry.gamesPlayed));
         const highestTotalScore = Math.max(...leaderboard.map(entry => entry.totalScore));
-        
-        // Find the player with biggest improvement and most consistent scores
-        const validPlayers = leaderboard.filter(entry => entry.gamesPlayed >= 10);
-        const biggestImprovement = validPlayers.length > 0 ? 
-            Math.max(...validPlayers.map(entry => entry.improvement)) : 0;
-        const bestConsistency = validPlayers.length > 0 ? 
-            Math.min(...validPlayers.map(entry => entry.consistency)) : Infinity;
+        const highestTileAchieved = Math.max(...leaderboard.map(entry => entry.highestTile || 0));
+        const fastestHighScore = Math.min(...leaderboard.map(entry => entry.fastestHighScore || Infinity));
+        const mostNightGames = Math.max(...leaderboard.map(entry => entry.nightGames || 0));
+        const mostWeekendGames = Math.max(...leaderboard.map(entry => entry.weekendGames || 0));
+        const mostEarlyGames = Math.max(...leaderboard.map(entry => entry.earlyGames || 0));
         
         leaderboard.forEach((entry, index) => {
             const item = document.createElement('div');
@@ -407,7 +428,7 @@ class Game2048 {
             }
 
             // Add Comeback King badge for biggest score improvement
-            if (entry.improvement === biggestImprovement && entry.gamesPlayed >= 10) {
+            if (entry.improvement === Math.max(...leaderboard.map(entry => entry.improvement)) && entry.gamesPlayed >= 10) {
                 const comebackBadge = document.createElement('span');
                 comebackBadge.className = 'comeback-badge';
                 comebackBadge.textContent = 'COMEBACK KING';
@@ -416,12 +437,69 @@ class Game2048 {
             }
 
             // Add Consistent badge for smallest score variance
-            if (entry.consistency === bestConsistency && entry.gamesPlayed >= 10) {
+            if (entry.consistency === Math.min(...leaderboard.map(entry => entry.consistency)) && entry.gamesPlayed >= 10) {
                 const consistentBadge = document.createElement('span');
                 consistentBadge.className = 'consistent-badge';
                 consistentBadge.textContent = 'CONSISTENT';
                 consistentBadge.title = `Play at least 10 games and maintain the most consistent scores\nCurrent variance: ${Math.round(entry.consistency).toLocaleString()} points`;
                 nameSpan.appendChild(consistentBadge);
+            }
+            
+            // Add Perfectionist badge for highest tile
+            if (entry.highestTile === highestTileAchieved && entry.highestTile >= 2048) {
+                const perfectionistBadge = document.createElement('span');
+                perfectionistBadge.className = 'perfectionist-badge';
+                perfectionistBadge.textContent = 'PERFECTIONIST';
+                perfectionistBadge.title = `Reached the highest tile: ${entry.highestTile}`;
+                nameSpan.appendChild(perfectionistBadge);
+            }
+
+            // Add Speedster badge for fastest high score
+            if (entry.fastestHighScore === fastestHighScore && entry.fastestHighScore < 180) { // 3 minutes
+                const speedsterBadge = document.createElement('span');
+                speedsterBadge.className = 'speedster-badge';
+                speedsterBadge.textContent = 'SPEEDSTER';
+                const minutes = Math.floor(entry.fastestHighScore / 60);
+                const seconds = entry.fastestHighScore % 60;
+                speedsterBadge.title = `Scored 10,000+ points in ${minutes}m ${seconds}s`;
+                nameSpan.appendChild(speedsterBadge);
+            }
+
+            // Add Night Owl badge for most night games
+            if (entry.nightGames === mostNightGames && entry.nightGames >= 5) {
+                const nightOwlBadge = document.createElement('span');
+                nightOwlBadge.className = 'night-owl-badge';
+                nightOwlBadge.textContent = 'NIGHT OWL';
+                nightOwlBadge.title = `Played ${entry.nightGames} games between 11 PM and 5 AM`;
+                nameSpan.appendChild(nightOwlBadge);
+            }
+
+            // Add Weekend Warrior badge
+            if (entry.weekendGames === mostWeekendGames && entry.weekendGames >= 10) {
+                const weekendBadge = document.createElement('span');
+                weekendBadge.className = 'weekend-badge';
+                weekendBadge.textContent = 'WEEKEND WARRIOR';
+                weekendBadge.title = `Played ${entry.weekendGames} games on weekends`;
+                nameSpan.appendChild(weekendBadge);
+            }
+
+            // Add Early Bird badge
+            if (entry.earlyGames === mostEarlyGames && entry.earlyGames >= 5) {
+                const earlyBadge = document.createElement('span');
+                earlyBadge.className = 'early-bird-badge';
+                earlyBadge.textContent = 'EARLY BIRD';
+                earlyBadge.title = `Played ${entry.earlyGames} games between 5 AM and 8 AM`;
+                nameSpan.appendChild(earlyBadge);
+            }
+
+            // Add Streak badge
+            const streak = this.calculateStreak(entry.allDates);
+            if (streak >= 3) {
+                const streakBadge = document.createElement('span');
+                streakBadge.className = 'streak-badge';
+                streakBadge.textContent = 'DAILY STREAK';
+                streakBadge.title = `Played ${streak} days in a row!`;
+                nameSpan.appendChild(streakBadge);
             }
             
             rankAndName.appendChild(nameSpan);
@@ -453,6 +531,7 @@ class Game2048 {
         this.previousBoard = Array(4).fill().map(() => Array(4).fill(0));
         this.score = 0;
         this.scoreDisplay.textContent = '0';
+        this.gameStartTime = Date.now();
         
         // Add two initial tiles
         this.addRandomTile();
@@ -879,6 +958,46 @@ class Game2048 {
                 });
             }, i * 200); // Stagger the fireworks
         }
+    }
+
+    isNightTime(timestamp) {
+        const hour = new Date(timestamp).getHours();
+        return hour >= 23 || hour < 5;
+    }
+
+    isWeekend(timestamp) {
+        const day = new Date(timestamp).getDay();
+        return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
+    }
+
+    isEarlyMorning(timestamp) {
+        const hour = new Date(timestamp).getHours();
+        return hour >= 5 && hour < 8;
+    }
+
+    calculateStreak(dates) {
+        // Convert dates to day strings (YYYY-MM-DD)
+        const dayStrings = [...new Set(dates.map(date => 
+            new Date(date).toISOString().split('T')[0]
+        ))].sort();
+
+        let currentStreak = 1;
+        let longestStreak = 1;
+        
+        for (let i = 1; i < dayStrings.length; i++) {
+            const prevDate = new Date(dayStrings[i - 1]);
+            const currDate = new Date(dayStrings[i]);
+            const diffDays = (currDate - prevDate) / (1000 * 60 * 60 * 24);
+            
+            if (diffDays === 1) {
+                currentStreak++;
+                longestStreak = Math.max(longestStreak, currentStreak);
+            } else {
+                currentStreak = 1;
+            }
+        }
+        
+        return longestStreak;
     }
 }
 
